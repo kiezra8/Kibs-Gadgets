@@ -80,7 +80,12 @@ export default function CartPage({ onClose }) {
                 <button
                     className="btn-primary"
                     onClick={() => {
-                        alert(`📦 Order placed!\n\nTotal: ${formatPrice(cartTotal)}\n\nWe'll contact you on +256756439671 to confirm delivery. Thank you!`);
+                        const message = `*NEW ORDER - KIBS GADGETS*\n\n` +
+                            cart.map(item => `${item.qty}x ${item.name} (${formatPrice(item.price)})`).join('\n') +
+                            `\n\n*Total:* ${formatPrice(cartTotal)}\n\nPlease confirm my order!`;
+
+                        const encodedMessage = encodeURIComponent(message);
+                        window.open(`https://wa.me/256756439671?text=${encodedMessage}`, '_blank');
                         onClose();
                     }}
                     id="checkout-btn"
