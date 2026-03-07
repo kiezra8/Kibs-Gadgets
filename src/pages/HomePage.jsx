@@ -118,7 +118,7 @@ export default function HomePage({ onProductClick, onCategoryClick, onNavigate }
                     <div
                         key={cat.id}
                         className={`category-chip${activeCat === cat.id ? ' active' : ''}`}
-                        onClick={() => setActiveCat(activeCat === cat.id ? 'all' : cat.id)}
+                        onClick={() => onCategoryClick(cat.id)}
                     >
                         <img
                             className="category-chip-img"
