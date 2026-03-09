@@ -10,16 +10,16 @@ export default function AccountPage({ onAdminClick }) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-            loginAdmin();
+        const success = await loginAdmin(username, password);
+        if (success) {
             setShowLoginModal(false);
             setUsername('');
             setPassword('');
             setError('');
         } else {
-            setError('Invalid credentials. Please try again.');
+            setError('Invalid Nhost credentials. Please try again.');
         }
     };
 
@@ -150,14 +150,14 @@ export default function AccountPage({ onAdminClick }) {
                         </p>
                         <form className="admin-login-form" onSubmit={handleLogin}>
                             <div className="input-group">
-                                <label>Username</label>
+                                <label>Email Address</label>
                                 <input
-                                    type="text"
-                                    placeholder="Enter username"
+                                    type="email"
+                                    placeholder="Enter admin email"
                                     value={username}
                                     onChange={e => setUsername(e.target.value)}
                                     id="admin-username"
-                                    autoComplete="off"
+                                    required
                                 />
                             </div>
                             <div className="input-group">
@@ -168,6 +168,7 @@ export default function AccountPage({ onAdminClick }) {
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     id="admin-password"
+                                    required
                                 />
                             </div>
                             {error && (
@@ -185,7 +186,7 @@ export default function AccountPage({ onAdminClick }) {
                             </button>
                         </form>
                         <p style={{ fontSize: 11, color: '#aaa', textAlign: 'center', marginTop: 12 }}>
-                            Default: admin / kibsadmin2024
+                            Use your Nhost account email: israelezrakisakye@gmail.com
                         </p>
                     </div>
                 </div>

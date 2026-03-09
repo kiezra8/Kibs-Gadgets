@@ -1,6 +1,5 @@
 // src/pages/HomePage.jsx
 import React, { useState, useEffect } from 'react';
-import { CATEGORIES, PRODUCTS } from '../data/store';
 import { useApp } from '../context/AppContext';
 import ProductCard from '../components/ProductCard';
 
@@ -10,7 +9,7 @@ const BANNERS = [
         sub: 'New arrivals from Samsung, iPhone & more',
         badge: '🔥 HOT DEALS',
         bg: 'linear-gradient(135deg, #e63946 0%, #ff6b6b 100%)',
-        img: 'https://images.unsplash.com/photo-1710943745791-b7c64a1bfb36?w=480&q=80',
+        img: 'https://i.pinimg.com/736x/fb/a7/d8/fba7d88ab0309d17c46f4e5f0ebb416f.jpg',
     },
     {
         title: 'Laptops Up to 30% Off',
@@ -38,7 +37,7 @@ const PROMOS = [
 ];
 
 export default function HomePage({ onProductClick, onCategoryClick, onNavigate }) {
-    const { getImg } = useApp();
+    const { getImg, products, categories } = useApp();
     const [bannerIdx, setBannerIdx] = useState(0);
     const [activeCat, setActiveCat] = useState('all');
     const [hours, setHours] = useState(5);
@@ -68,10 +67,10 @@ export default function HomePage({ onProductClick, onCategoryClick, onNavigate }
     }, []);
 
     const pad = n => String(n).padStart(2, '0');
-    const flashProducts = PRODUCTS.filter(p => p.discount >= 15).slice(0, 6);
+    const flashProducts = products.filter(p => p.discount >= 15).slice(0, 6);
     const filteredProducts = activeCat === 'all'
-        ? PRODUCTS.slice(0, 8)
-        : PRODUCTS.filter(p => p.category === activeCat).slice(0, 8);
+        ? products.slice(0, 8)
+        : products.filter(p => p.category === activeCat).slice(0, 8);
 
     return (
         <div className="home-page">
@@ -114,7 +113,7 @@ export default function HomePage({ onProductClick, onCategoryClick, onNavigate }
                 <button className="section-more" onClick={() => onNavigate('categories')}>View All →</button>
             </div>
             <div className="category-home-grid">
-                {CATEGORIES.map(cat => (
+                {categories.map(cat => (
                     <div
                         key={cat.id}
                         className={`category-chip${activeCat === cat.id ? ' active' : ''}`}
@@ -152,7 +151,7 @@ export default function HomePage({ onProductClick, onCategoryClick, onNavigate }
             {/* Recommended */}
             <div className="section-header">
                 <h2 className="section-title">
-                    {activeCat === 'all' ? 'Recommended For You' : `${CATEGORIES.find(c => c.id === activeCat)?.name || ''} Products`}
+                    {activeCat === 'all' ? 'Recommended For You' : `${categories.find(c => c.id === activeCat)?.name || ''} Products`}
                 </h2>
                 <button className="section-more" onClick={() => onNavigate('products')}>See All →</button>
             </div>

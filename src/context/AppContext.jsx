@@ -90,30 +90,121 @@ export function AppProvider({ children }) {
 
     const isWishlisted = (id) => wishlist.some(i => i.id === id);
 
-    // Admin
-    const loginAdmin = () => {
-        setIsAdmin(true);
-        localStorage.setItem('kibs_admin', 'true');
-        addToast('Admin access granted!', '🔐');
+    const [nhostProducts, setNhostProducts] = useState([]);
+    const [nhostUser, setNhostUser] = useState(null);
+
+    // Initial Nhost Load
+    useEffect(() => {
+        import('../nhost').then(async ({ nhost }) => {
+            // Setup Auth listener
+            nhost.auth.onAuthStateChanged((event, session) => {
+                const user = session?.user;
+                setNhostUser(user);
+                if (user?.email === 'israelezrakisakye@gmail.com') {
+                    setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
+                }
+            });
+
+            // Fetch Products
+            fetchNhostProducts();
+        });
+    }, []);
+
+    const fetchNhostProducts = async () => {
+        try {
+            const { nhost } = await import('../nhost');
+            const QUERY = `
+              query GetProducts {
+                products {
+                  id
+                  name
+                  category
+                  condition
+                  price
+                  oldPrice
+                  discount
+                  description
+                  defaultImg
+                }
+              }
+            `;
+            const { data, error } = await nhost.graphql.request(QUERY);
+            if (error) throw error;
+
+            if (data?.products) {
+                const mapped = data.products.map(d => ({
+                    id: d.id,
+                    name: d.name,
+                    category: d.category,
+                    condition: d.condition || 'new',
+                    price: d.price,
+                    oldPrice: d.oldPrice || null,
+                    discount: d.discount || 0,
+                    description: d.description || '',
+                    defaultImg: d.defaultImg,
+                    rating: 4.5,
+                    reviews: 0,
+                }));
+                setNhostProducts(mapped);
+            }
+        } catch (e) {
+            console.error('Nhost products fetch error:', e);
+        }
     };
 
-    const logoutAdmin = () => {
-        setIsAdmin(false);
-        localStorage.removeItem('kibs_admin');
+    // Combine static products with Nhost products
+    const products = React.useMemo(() => {
+        const nIds = new Set(nhostProducts.map(p => p.id));
+        const filteredStatic = PRODUCTS.filter(p => !nIds.has(p.id));
+        return [...nhostProducts, ...filteredStatic];
+    }, [nhostProducts]);
+
+    const categories = CATEGORIES; // Static categories for now
+
+    // Admin
+    const loginAdmin = async (email, password) => {
+        try {
+            const { nhost } = await import('../nhost');
+            const { session, error } = await nhost.auth.signIn({ email, password });
+
+            if (error) {
+                addToast(error.message, '❌');
+                return false;
+            }
+
+            if (session?.user?.email === 'israelezrakisakye@gmail.com') {
+                addToast('Admin access granted!', '🔐');
+            } else {
+                addToast('Logged in, but not admin', '⚠️');
+            }
+            return true;
+        } catch (e) {
+            addToast(e.message, '❌');
+            return false;
+        }
+    };
+
+    const logoutAdmin = async () => {
+        try {
+            const { nhost } = await import('../nhost');
+            await nhost.auth.signOut();
+        } catch (e) { }
         addToast('Logged out of admin.', '👋');
     };
 
-    // Image updates (admin)
+    // Image updates (admin) local override - can be removed if fully using Appwrite
     const updateProductImage = (productId, dataUrl) => {
         localStorage.setItem(`img_product_${productId}`, dataUrl);
         setProductImages(prev => ({ ...prev, [productId]: dataUrl }));
-        addToast('Product image updated!', '🖼️');
+        addToast('Product image updated locally!', '🖼️');
     };
 
     const updateCategoryImage = (categoryId, dataUrl) => {
         localStorage.setItem(`img_category_${categoryId}`, dataUrl);
         setCategoryImages(prev => ({ ...prev, [categoryId]: dataUrl }));
-        addToast('Category image updated!', '🖼️');
+        addToast('Category image updated locally!', '🖼️');
     };
 
     const getImg = (type, id, defaultImg) => {
@@ -121,14 +212,18 @@ export function AppProvider({ children }) {
         return categoryImages[id] || defaultImg;
     };
 
+    const refreshProducts = async () => {
+        await fetchNhostProducts();
+    };
+
     return (
         <AppContext.Provider value={{
+            products, categories, refreshProducts,
             cart, addToCart, removeFromCart, updateQty, cartCount, cartTotal,
             wishlist, toggleWishlist, isWishlisted,
-            isAdmin, loginAdmin, logoutAdmin,
-            toasts,
+            isAdmin, loginAdmin, logoutAdmin, nhostUser,
+            toasts, addToast,
             updateProductImage, updateCategoryImage, getImg,
-            addToast,
         }}>
             {children}
         </AppContext.Provider>

@@ -90,7 +90,7 @@ export default function CartPage({ onClose }) {
                     }}
                     id="checkout-btn"
                 >
-                    Checkout · {formatPrice(cartTotal)}
+                    Order · {formatPrice(cartTotal)}
                 </button>
                 <button className="btn-outline" onClick={onClose} style={{ marginTop: 10 }}>
                     Continue Shopping

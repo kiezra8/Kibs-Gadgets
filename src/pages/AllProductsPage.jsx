@@ -1,6 +1,6 @@
 // src/pages/AllProductsPage.jsx
 import React, { useState, useMemo } from 'react';
-import { PRODUCTS, CATEGORIES } from '../data/store';
+import { useApp } from '../context/AppContext';
 import ProductCard from '../components/ProductCard';
 
 const CONDITIONS = ['All', 'New', 'Used'];
@@ -13,13 +13,14 @@ const SORTS = [
 ];
 
 export default function AllProductsPage({ onProductClick, initialCategory }) {
+    const { products, categories } = useApp();
     const [condition, setCondition] = useState('All');
     const [category, setCategory] = useState(initialCategory || 'all');
     const [sort, setSort] = useState('recommended');
     const [search, setSearch] = useState('');
 
     const filtered = useMemo(() => {
-        let list = [...PRODUCTS];
+        let list = [...products];
 
         // Search
         if (search.trim()) {
@@ -43,7 +44,7 @@ export default function AllProductsPage({ onProductClick, initialCategory }) {
         }
 
         return list;
-    }, [search, category, condition, sort]);
+    }, [search, category, condition, sort, products]);
 
     return (
         <div className="all-products-page">
@@ -73,7 +74,7 @@ export default function AllProductsPage({ onProductClick, initialCategory }) {
             {/* Category filter */}
             <div className="filter-bar">
                 <button className={`filter-chip${category === 'all' ? ' active' : ''}`} onClick={() => setCategory('all')}>All</button>
-                {CATEGORIES.map(c => (
+                {categories.map(c => (
                     <button key={c.id} className={`filter-chip${category === c.id ? ' active' : ''}`} onClick={() => setCategory(c.id)}>
                         {c.icon} {c.name}
                     </button>

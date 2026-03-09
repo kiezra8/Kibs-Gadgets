@@ -1,10 +1,9 @@
 // src/pages/CategoriesPage.jsx
 import React from 'react';
-import { CATEGORIES } from '../data/store';
 import { useApp } from '../context/AppContext';
 
 export default function CategoriesPage({ onCategorySelect }) {
-    const { getImg } = useApp();
+    const { getImg, categories } = useApp();
 
     return (
         <div style={{ padding: '10px 10px 10px' }}>
@@ -16,7 +15,7 @@ export default function CategoriesPage({ onCategorySelect }) {
             </div>
 
             <div className="categories-grid">
-                {CATEGORIES.map(cat => (
+                {categories.map(cat => (
                     <div
                         key={cat.id}
                         className="category-card"
