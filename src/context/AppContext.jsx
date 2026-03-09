@@ -163,8 +163,8 @@ export function AppProvider({ children }) {
 
     const categories = CATEGORIES; // Static categories for now
 
-    // Admin
-    const loginAdmin = async (email, password) => {
+    // Auth
+    const login = async (email, password) => {
         try {
             const { nhost } = await import('../nhost');
             const { session, error } = await nhost.auth.signIn({ email, password });
@@ -175,9 +175,9 @@ export function AppProvider({ children }) {
             }
 
             if (session?.user?.email === 'israelezrakisakye@gmail.com') {
-                addToast('Admin access granted!', '🔐');
+                addToast('Welcome back, Admin!', '🔐');
             } else {
-                addToast('Logged in, but not admin', '⚠️');
+                addToast(`Welcome back, ${session?.user?.displayName || 'User'}!`, '👋');
             }
             return true;
         } catch (e) {
@@ -186,12 +186,36 @@ export function AppProvider({ children }) {
         }
     };
 
-    const logoutAdmin = async () => {
+    const signup = async (email, password, displayName) => {
+        try {
+            const { nhost } = await import('../nhost');
+            const { session, error } = await nhost.auth.signUp({
+                email,
+                password,
+                options: { displayName }
+            });
+
+            if (error) {
+                addToast(error.message, '❌');
+                return false;
+            }
+
+            addToast('Account created successfully!', '🎉');
+            return true;
+        } catch (e) {
+            addToast(e.message, '❌');
+            return false;
+        }
+    };
+
+    const logout = async () => {
         try {
             const { nhost } = await import('../nhost');
             await nhost.auth.signOut();
-        } catch (e) { }
-        addToast('Logged out of admin.', '👋');
+            addToast('Logged out successfully.', '👋');
+        } catch (e) {
+            addToast('Logout failed.', '❌');
+        }
     };
 
     // Image updates (admin) local override - can be removed if fully using Appwrite
@@ -221,7 +245,7 @@ export function AppProvider({ children }) {
             products, categories, refreshProducts,
             cart, addToCart, removeFromCart, updateQty, cartCount, cartTotal,
             wishlist, toggleWishlist, isWishlisted,
-            isAdmin, loginAdmin, logoutAdmin, nhostUser,
+            isAdmin, login, logout, signup, nhostUser,
             toasts, addToast,
             updateProductImage, updateCategoryImage, getImg,
         }}>

@@ -1,25 +1,43 @@
 // src/pages/AccountPage.jsx
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ADMIN_CREDENTIALS, formatPrice } from '../data/store';
+import { formatPrice } from '../data/store';
 
 export default function AccountPage({ onAdminClick }) {
-    const { isAdmin, loginAdmin, logoutAdmin, cart, wishlist, cartTotal } = useApp();
-    const [showLoginModal, setShowLoginModal] = useState(false);
-    const [username, setUsername] = useState('');
+    const { isAdmin, nhostUser, login, signup, logout, cart, wishlist, cartTotal } = useApp();
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [isLoginView, setIsLoginView] = useState(true);
+
+    // Form fields
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = async (e) => {
+    const handleAuth = async (e) => {
         e.preventDefault();
-        const success = await loginAdmin(username, password);
-        if (success) {
-            setShowLoginModal(false);
-            setUsername('');
-            setPassword('');
-            setError('');
-        } else {
-            setError('Invalid Nhost credentials. Please try again.');
+        setError('');
+        setLoading(true);
+
+        try {
+            let success = false;
+            if (isLoginView) {
+                success = await login(email, password);
+            } else {
+                success = await signup(email, password, name);
+            }
+
+            if (success) {
+                setShowAuthModal(false);
+                setEmail('');
+                setPassword('');
+                setName('');
+            }
+        } catch (err) {
+            setError(err.message || 'Authentication failed');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -54,37 +72,43 @@ export default function AccountPage({ onAdminClick }) {
         <div className="account-page">
             {/* Hero */}
             <div className="account-hero">
-                <div className="account-avatar">👤</div>
-                <h2 className="account-name">Welcome to KIBS!</h2>
-                <p className="account-email">Uganda's #1 Gadget Store</p>
+                <div className="account-avatar">{nhostUser ? (nhostUser.displayName?.[0] || '👤') : '👤'}</div>
+                <h2 className="account-name">
+                    {nhostUser ? `Hello, ${nhostUser.displayName || 'User'}!` : 'Welcome to KIBS!'}
+                </h2>
+                <p className="account-email">
+                    {nhostUser ? nhostUser.email : "Uganda's #1 Gadget Store"}
+                </p>
 
-                {isAdmin ? (
-                    <button
-                        className="admin-badge"
-                        onClick={onAdminClick}
-                        style={{ display: 'block', margin: '12px auto 0' }}
-                    >
-                        🔐 Admin Dashboard
-                    </button>
+                {nhostUser ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                        {isAdmin && (
+                            <button className="admin-badge" onClick={onAdminClick}>
+                                🔐 Admin Dashboard
+                            </button>
+                        )}
+                        <button
+                            onClick={logout}
+                            style={{
+                                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+                                borderRadius: 20, padding: '6px 16px', color: 'white',
+                                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                                width: 'fit-content', margin: '0 auto'
+                            }}
+                        >
+                            Log Out
+                        </button>
+                    </div>
                 ) : (
                     <button
                         className="admin-badge"
-                        onClick={() => setShowLoginModal(true)}
-                    >
-                        🔑 Admin Login
-                    </button>
-                )}
-
-                {isAdmin && (
-                    <button
-                        onClick={logoutAdmin}
-                        style={{
-                            marginTop: 8, background: 'none', border: '1.5px solid rgba(255,255,255,0.4)',
-                            borderRadius: 20, padding: '4px 14px', color: 'rgba(255,255,255,0.7)',
-                            fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                        style={{ marginTop: 16 }}
+                        onClick={() => {
+                            setIsLoginView(true);
+                            setShowAuthModal(true);
                         }}
                     >
-                        Logout Admin
+                        🔑 Login / Sign Up
                     </button>
                 )}
             </div>
@@ -136,27 +160,41 @@ export default function AccountPage({ onAdminClick }) {
             <div style={{ textAlign: 'center', padding: '20px 20px 10px', color: '#aaa', fontSize: 11 }}>
                 <p style={{ fontWeight: 700, color: '#666', fontSize: 14 }}>KIBS Gadgets</p>
                 <p style={{ marginTop: 2 }}>Uganda's Premier Gadget Marketplace</p>
-                <p style={{ marginTop: 1 }}>Version 1.0.0 · © 2025 KIBS</p>
+                <p style={{ marginTop: 1 }}>Version 1.0.1 · © 2026 KIBS</p>
             </div>
 
-            {/* Admin Login Modal */}
-            {showLoginModal && (
-                <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
+            {/* Auth Modal */}
+            {showAuthModal && (
+                <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
                     <div className="modal-sheet" onClick={e => e.stopPropagation()}>
                         <div className="modal-handle" />
-                        <h2 className="modal-title">🔐 Admin Login</h2>
+                        <h2 className="modal-title">{isLoginView ? '👋 Welcome Back' : '✨ Join KIBS'}</h2>
                         <p style={{ fontSize: 13, color: '#757575', marginBottom: 16 }}>
-                            Enter your admin credentials to manage the store.
+                            {isLoginView
+                                ? 'Login to access your orders and wishlist.'
+                                : 'Create an account to start shopping at KIBS.'}
                         </p>
-                        <form className="admin-login-form" onSubmit={handleLogin}>
+
+                        <form className="admin-login-form" onSubmit={handleAuth}>
+                            {!isLoginView && (
+                                <div className="input-group">
+                                    <label>Full Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter your name"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            )}
                             <div className="input-group">
                                 <label>Email Address</label>
                                 <input
                                     type="email"
-                                    placeholder="Enter admin email"
-                                    value={username}
-                                    onChange={e => setUsername(e.target.value)}
-                                    id="admin-username"
+                                    placeholder="Enter your email"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
                                     required
                                 />
                             </div>
@@ -167,30 +205,37 @@ export default function AccountPage({ onAdminClick }) {
                                     placeholder="Enter password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    id="admin-password"
                                     required
                                 />
                             </div>
+
                             {error && (
-                                <p style={{ color: '#e63946', fontSize: 12, fontWeight: 600 }}>❌ {error}</p>
+                                <p style={{ color: '#e63946', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
+                                    ❌ {error}
+                                </p>
                             )}
-                            <button type="submit" className="btn-primary" id="admin-login-btn">
-                                Login to Admin
+
+                            <button
+                                type="submit"
+                                className="btn-primary"
+                                disabled={loading}
+                            >
+                                {loading ? 'Processing...' : (isLoginView ? 'Login' : 'Create Account')}
                             </button>
+
                             <button
                                 type="button"
                                 className="btn-outline"
-                                onClick={() => setShowLoginModal(false)}
+                                style={{ marginTop: 8 }}
+                                onClick={() => setIsLoginView(!isLoginView)}
                             >
-                                Cancel
+                                {isLoginView ? "Don't have an account? Sign Up" : 'Already have an account? Login'}
                             </button>
                         </form>
-                        <p style={{ fontSize: 11, color: '#aaa', textAlign: 'center', marginTop: 12 }}>
-                            Use your Nhost account email: israelezrakisakye@gmail.com
-                        </p>
                     </div>
                 </div>
             )}
         </div>
     );
 }
+
